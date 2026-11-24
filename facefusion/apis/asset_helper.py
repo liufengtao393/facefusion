@@ -9,11 +9,11 @@ from starlette.datastructures import UploadFile
 import facefusion.choices
 from facefusion import ffmpeg, process_manager, state_manager, translator
 from facefusion.face_creator import get_many_faces
-from facefusion.face_grouper import create_face_groups, sort_face_group_by_average
+from facefusion.face_grouper import create_face_clusters
 from facefusion.face_helper import warp_face_by_bounding_box
 from facefusion.face_selector import sort_faces_by_order
 from facefusion.filesystem import create_directory, get_file_extension, get_file_format, is_audio, is_image, is_video
-from facefusion.types import Face, FacePointer, FacePointerSet, ImageAsset, ImageMetadata, MediaType, VideoAsset, VisionFrame
+from facefusion.types import Face, FaceClusterSet, FacePointer, ImageAsset, ImageMetadata, MediaType, VideoAsset, VisionFrame
 from facefusion.vision import detect_image_resolution, fit_contain_frame, is_vision_frame, read_static_image, read_static_video_frame, unpack_resolution
 
 
@@ -131,11 +131,11 @@ def capture_asset_faces(asset : ImageAsset | VideoAsset, frame_indexes : List[st
 	return capture_vision_frames
 
 
-def group_asset_faces(asset : ImageAsset | VideoAsset, frame_indexes : List[str]) -> FacePointerSet:
+def group_asset_faces(asset : ImageAsset | VideoAsset, frame_indexes : List[str]) -> FaceClusterSet:
 	reference_group_distance = state_manager.get_item('reference_group_distance')
 	target_faces : List[Face] = []
 	face_pointers : List[FacePointer] = []
-	face_pointer_set : FacePointerSet = {}
+	face_cluster_set : FaceClusterSet = {}
 
 	if asset.get('media') == 'image':
 		frame_indexes = frame_indexes[:1]
@@ -154,8 +154,8 @@ def group_asset_faces(asset : ImageAsset | VideoAsset, frame_indexes : List[str]
 				target_faces.append(face)
 				face_pointers.append(face_pointer)
 
-	for face_group_index, face_indexes in enumerate(create_face_groups(target_faces, reference_group_distance)):
-		group_faces = [ target_faces[face_index] for face_index in face_indexes ]
-		face_pointer_set[str(face_group_index)] = [ face_pointers[face_indexes[group_index]] for group_index in sort_face_group_by_average(group_faces) ]
+	for face_cluster_index, face_cluster in enumerate(create_face_clusters(target_faces, reference_group_distance)):
+		for face_index in face_cluster:
+			face_cluster_set.setdefault(str(face_cluster_index), []).append(face_pointers[face_index])
 
-	return face_pointer_set
+	return face_cluster_set

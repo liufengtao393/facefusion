@@ -464,7 +464,7 @@ def create_face_selector_program() -> ArgumentParser:
 				metavar = create_float_metavar(facefusion.choices.reference_group_distance_range)
 			)
 		],
-		scopes = [ 'api', 'cli' ],
+		scopes = [ 'api' ],
 		groups = [ 'face_selector' ]
 	)
 
