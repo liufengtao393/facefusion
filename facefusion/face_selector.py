@@ -14,7 +14,7 @@ def select_faces(reference_vision_frames : List[VisionFrame], source_vision_fram
 	face_tracker_score = state_manager.get_item('face_tracker_score')
 	face_selector_mode = state_manager.get_item('face_selector_mode')
 	face_selector_maps = decode_face_selector_maps(state_manager.get_item('face_selector_maps'))
-	reference_face_distance = state_manager.get_item('reference_face_distance')
+	reference_match_distance = state_manager.get_item('reference_match_distance')
 
 	source_faces = get_static_faces(source_vision_frames)
 
@@ -59,12 +59,12 @@ def select_faces(reference_vision_frames : List[VisionFrame], source_vision_fram
 
 		for target_face in target_faces:
 			match_source_faces = []
-			match_face_distance = reference_face_distance
+			temp_match_distance = reference_match_distance
 
 			for source_face, reference_face in zip(source_faces, reference_faces):
-				if compare_faces(target_face, reference_face, match_face_distance):
+				if compare_faces(target_face, reference_face, temp_match_distance):
 					match_source_faces.append(source_face)
-					match_face_distance = calculate_face_distance(target_face, reference_face) / 2
+					temp_match_distance = calculate_face_distance(target_face, reference_face) / 2
 
 			if match_source_faces:
 				__source_faces__.append(get_last(match_source_faces))

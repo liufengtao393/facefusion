@@ -50,7 +50,7 @@ def before_all() -> None:
 	state_manager.init_item('face_aligner_model', 'many')
 	state_manager.init_item('face_aligner_score', 0.5)
 	state_manager.init_item('face_tracker_score', 0)
-	state_manager.init_item('reference_face_distance', 0.3)
+	state_manager.init_item('reference_match_distance', 0.3)
 
 	face_classifier.pre_check()
 	face_detector.pre_check()
@@ -183,7 +183,7 @@ def test_select_faces() -> None:
 	assert compare_faces(get_last(target_faces), get_first(get_static_faces([ target_vision_frame ])), 0.3) is True
 
 	state_manager.set_item('face_selector_maps', [ '0:0 to 0:0', '1:1 to 1:1' ])
-	state_manager.set_item('reference_face_distance', 1.0)
+	state_manager.set_item('reference_match_distance', 1.0)
 
 	source_faces, target_faces = select_faces([ source_vision_frame, reference_vision_frame ], [ source_vision_frame, reference_vision_frame ], [ reference_vision_frame ])
 
@@ -195,7 +195,7 @@ def test_select_faces() -> None:
 	assert compare_faces(get_last(target_faces), get_first(get_static_faces([ target_vision_frame ])), 0.3) is True
 
 	state_manager.set_item('face_selector_maps', [ '0:2 to 0:1' ])
-	state_manager.set_item('reference_face_distance', 0.3)
+	state_manager.set_item('reference_match_distance', 0.3)
 
 	source_faces, target_faces = select_faces([ reference_vision_frame ], [ reference_vision_frame ], [ reference_vision_frame ])
 
