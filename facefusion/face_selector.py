@@ -7,7 +7,7 @@ from facefusion import state_manager
 from facefusion.common_helper import get_first, get_last, get_middle
 from facefusion.face_creator import average_face_identity, get_one_face, get_static_faces
 from facefusion.face_tracker import track_faces
-from facefusion.types import Face, FacePointer, FaceSelectorMap, FaceSelectorOrder, Gender, Map, Race, Score, VisionFrame
+from facefusion.types import Distance, Face, FacePointer, FaceSelectorMap, FaceSelectorOrder, Gender, Map, Race, Score, VisionFrame
 
 
 def select_faces(reference_vision_frames : List[VisionFrame], source_vision_frames : List[VisionFrame], target_vision_frames : List[VisionFrame]) -> Tuple[List[Face], List[Face]]:
@@ -48,13 +48,13 @@ def select_faces(reference_vision_frames : List[VisionFrame], source_vision_fram
 		select_target_faces = []
 
 		for face_selector_map in face_selector_maps:
-			source_face = extract_source_face(source_vision_frames, face_selector_map.get('source_faces'))
+			source_face = extract_source_face(source_vision_frames, face_selector_map.get('source_face_pointers'))
 
-			for reference_face in extract_reference_faces(reference_vision_frames, face_selector_map.get('reference_faces')):
+			for reference_face in extract_reference_faces(reference_vision_frames, face_selector_map.get('reference_face_pointers')):
 				map_source_faces.append(source_face)
 				map_reference_faces.append(reference_face)
 
-			reference_face_total = len(face_selector_map.get('reference_faces'))
+			reference_face_total = len(face_selector_map.get('reference_face_pointers'))
 			reference_vision_frames = reference_vision_frames[reference_face_total:]
 
 		for target_face in target_faces:
@@ -64,7 +64,7 @@ def select_faces(reference_vision_frames : List[VisionFrame], source_vision_fram
 			for source_face, reference_face in zip(map_source_faces, map_reference_faces):
 				if compare_faces(target_face, reference_face, temp_match_distance):
 					match_source_faces.append(source_face)
-					temp_match_distance = calculate_face_distance(target_face, reference_face) / 2
+					temp_match_distance = calculate_face_distance(target_face, reference_face)
 
 			if match_source_faces:
 				select_source_faces.append(get_last(match_source_faces))
@@ -82,7 +82,7 @@ def decode_face_selector_maps(face_selector_maps : Optional[List[Map]]) -> List[
 		for face_selector_map in face_selector_maps:
 			__face_selector_map__ = decode_face_selector_map(face_selector_map)
 
-			if __face_selector_map__.get('source_faces') or __face_selector_map__.get('reference_faces'):
+			if __face_selector_map__.get('source_face_pointers') or __face_selector_map__.get('reference_face_pointers'):
 				temp_face_selector_maps.append(__face_selector_map__)
 
 	return temp_face_selector_maps
@@ -91,16 +91,16 @@ def decode_face_selector_maps(face_selector_maps : Optional[List[Map]]) -> List[
 def decode_face_selector_map(face_selector_map : Map) -> FaceSelectorMap:
 	source_face_pointers : List[FacePointer] = []
 	reference_face_pointers : List[FacePointer] = []
-	face_pointers = source_face_pointers
+	current_face_pointers = source_face_pointers
 
 	for face_selector_value in face_selector_map.split():
 		frame_index, _, face_position = face_selector_value.partition(':')
 
 		if face_selector_value == 'to':
-			face_pointers = reference_face_pointers
+			current_face_pointers = reference_face_pointers
 
 		if frame_index.isdecimal() and face_position.isdecimal():
-			face_pointers.append(
+			current_face_pointers.append(
 			{
 				'frame_index': int(frame_index),
 				'face_position': int(face_position)
@@ -108,8 +108,8 @@ def decode_face_selector_map(face_selector_map : Map) -> FaceSelectorMap:
 
 	return\
 	{
-		'source_faces': source_face_pointers,
-		'reference_faces': reference_face_pointers
+		'source_face_pointers': source_face_pointers,
+		'reference_face_pointers': reference_face_pointers
 	}
 
 
@@ -117,7 +117,7 @@ def collect_source_face_pointers(face_selector_maps : List[FaceSelectorMap]) -> 
 	source_face_pointers : List[FacePointer] = []
 
 	for face_selector_map in face_selector_maps:
-		source_face_pointers.extend(face_selector_map.get('source_faces'))
+		source_face_pointers.extend(face_selector_map.get('source_face_pointers'))
 
 	return source_face_pointers
 
@@ -159,27 +159,26 @@ def extract_reference_faces(reference_vision_frames : List[VisionFrame], referen
 	return faces
 
 
-def find_match_faces(reference_faces : List[Face], target_faces : List[Face], match_distance : float) -> List[Face]:
+def find_match_faces(reference_faces : List[Face], target_faces : List[Face], face_distance : Distance) -> List[Face]:
 	match_faces : List[Face] = []
 
 	for reference_face in reference_faces:
 		if reference_face:
 			for index, target_face in enumerate(target_faces):
-				if compare_faces(target_face, reference_face, match_distance):
+				if compare_faces(target_face, reference_face, face_distance):
 					match_faces.append(target_faces[index])
 
 	return match_faces
 
 
-def compare_faces(face : Face, reference_face : Face, match_distance : float) -> bool:
-	current_face_distance = calculate_face_distance(face, reference_face)
-	current_face_distance = float(numpy.interp(current_face_distance, [ 0, 2 ], [ 0, 1 ]))
-	return current_face_distance < match_distance
+def compare_faces(face : Face, reference_face : Face, face_distance : Distance) -> bool:
+	return calculate_face_distance(face, reference_face) < face_distance
 
 
-def calculate_face_distance(face : Face, reference_face : Face) -> float:
+def calculate_face_distance(face : Face, reference_face : Face) -> Distance:
 	if hasattr(face, 'embedding_norm') and hasattr(reference_face, 'embedding_norm'):
-		return 1 - numpy.dot(face.embedding_norm, reference_face.embedding_norm)
+		face_distance = 1 - numpy.dot(face.embedding_norm, reference_face.embedding_norm)
+		return float(numpy.interp(face_distance, [ 0, 2 ], [ 0, 1 ]))
 	return 0
 
 

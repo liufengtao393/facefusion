@@ -2,10 +2,10 @@ from typing import List
 
 import numpy
 
-from facefusion.types import Embedding, Face
+from facefusion.types import Distance, Embedding, Face
 
 
-def create_face_clusters(faces : List[Face], group_distance : float) -> List[List[int]]:
+def create_face_clusters(faces : List[Face], group_distance : Distance) -> List[List[int]]:
 	face_clusters : List[List[int]] = []
 	embeddings : List[Embedding] = []
 

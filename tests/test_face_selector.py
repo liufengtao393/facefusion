@@ -214,15 +214,15 @@ def test_select_faces() -> None:
 
 
 def test_decode_face_selector_maps() -> None:
-	assert decode_face_selector_maps([ '0:0 1:0 to 100:1', '2:0' ]) == [ { 'source_faces': [ { 'frame_index': 0, 'face_position': 0 }, { 'frame_index': 1, 'face_position': 0 } ], 'reference_faces': [ { 'frame_index': 100, 'face_position': 1 } ] }, { 'source_faces': [ { 'frame_index': 2, 'face_position': 0 } ], 'reference_faces': [] } ]
-	assert decode_face_selector_maps([ 'to 100:1', 'invalid' ]) == [ { 'source_faces': [], 'reference_faces': [ { 'frame_index': 100, 'face_position': 1 } ] } ]
+	assert decode_face_selector_maps([ '0:0 1:0 to 100:1', '2:0' ]) == [ { 'source_face_pointers': [ { 'frame_index': 0, 'face_position': 0 }, { 'frame_index': 1, 'face_position': 0 } ], 'reference_face_pointers': [ { 'frame_index': 100, 'face_position': 1 } ] }, { 'source_face_pointers': [ { 'frame_index': 2, 'face_position': 0 } ], 'reference_face_pointers': [] } ]
+	assert decode_face_selector_maps([ 'to 100:1', 'invalid' ]) == [ { 'source_face_pointers': [], 'reference_face_pointers': [ { 'frame_index': 100, 'face_position': 1 } ] } ]
 	assert decode_face_selector_maps([]) == []
 	assert decode_face_selector_maps(None) == []
 
 
 def test_decode_face_selector_map() -> None:
-	assert decode_face_selector_map('0:0 to 100:1 200:0') == { 'source_faces': [ { 'frame_index': 0, 'face_position': 0 } ], 'reference_faces': [ { 'frame_index': 100, 'face_position': 1 }, { 'frame_index': 200, 'face_position': 0 } ] }
-	assert decode_face_selector_map('0:0 1 1,2 -1:0 0:0:0 to') == { 'source_faces': [ { 'frame_index': 0, 'face_position': 0 } ], 'reference_faces': [] }
+	assert decode_face_selector_map('0:0 to 100:1 200:0') == { 'source_face_pointers': [ { 'frame_index': 0, 'face_position': 0 } ], 'reference_face_pointers': [ { 'frame_index': 100, 'face_position': 1 }, { 'frame_index': 200, 'face_position': 0 } ] }
+	assert decode_face_selector_map('0:0 1 1,2 -1:0 0:0:0 to') == { 'source_face_pointers': [ { 'frame_index': 0, 'face_position': 0 } ], 'reference_face_pointers': [] }
 
 
 def test_collect_source_face_pointers() -> None:
@@ -254,9 +254,9 @@ def test_calculate_face_distance() -> None:
 	face_a, face_b, face_c, face_d = create_faces()
 
 	assert calculate_face_distance(face_a, face_a) == 0.0
-	assert calculate_face_distance(face_a, face_b) == 1.0
-	assert calculate_face_distance(face_a, face_c) == 2.0
-	assert calculate_face_distance(face_d, face_a) == 0.4
+	assert calculate_face_distance(face_a, face_b) == 0.5
+	assert calculate_face_distance(face_a, face_c) == 1.0
+	assert calculate_face_distance(face_d, face_a) == 0.2
 
 
 def test_sort_and_filter_faces() -> None:
